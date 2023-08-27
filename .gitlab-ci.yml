@@ -1,0 +1,66 @@
+stages:
+  - build
+  - deploy
+
+image: moreillon/ci-dind
+services:
+  - name: docker:20-dind
+
+variables:
+  APPLICATION_NAME: ldap-search
+  ECR_URL: 732469118990.dkr.ecr.ap-northeast-1.amazonaws.com
+  CONTAINER_IMAGE: ${ECR_URL}/${APPLICATION_NAME}
+  CONTAINER_IMAGE_TEST: ${CONTAINER_IMAGE}:test
+  CONTAINER_IMAGE_LATEST: ${CONTAINER_IMAGE}:latest
+  CONTAINER_IMAGE_TAGGED: ${CONTAINER_IMAGE}:${CI_COMMIT_SHORT_SHA}
+  K8S_SERVICE_PORT: 30099
+  K8S_ECR_SECRET: ecr-credentials
+
+build:
+  stage: build
+  only:
+    - master
+  tags:
+    - dind
+  before_script:
+    # ECR login for pushing and pulling
+    - >
+      aws ecr get-login-password
+      | docker login
+      --username AWS
+      --password-stdin
+      ${ECR_URL}
+    # Create repository if needed
+    - >
+      aws ecr create-repository --repository-name ${APPLICATION_NAME}
+      || echo "Repository might have already existed"
+  script:
+    # Build the docker image. Pass proxy variables if set
+    - docker build -t ${CONTAINER_IMAGE} .
+    # Tagging
+    - docker tag ${CONTAINER_IMAGE} ${CONTAINER_IMAGE_TAGGED}
+    - docker tag ${CONTAINER_IMAGE} ${CONTAINER_IMAGE_LATEST}
+    # Pushing
+    - docker push ${CONTAINER_IMAGE_TAGGED}
+    - docker push ${CONTAINER_IMAGE_LATEST}
+
+deploy:
+  stage: deploy
+  only:
+    - master
+  before_script:
+    - >
+      kubectl create secret docker-registry ${K8S_ECR_SECRET}
+      --docker-server=${ECR_URL}
+      --docker-username=AWS
+      --docker-password $(aws ecr get-login-password)
+      --dry-run=client -o yaml
+      | kubectl apply -f -
+  script:
+    # create/update the deployment
+    - envsubst < kubernetes_manifest.yml | kubectl apply -f -
+  environment:
+    name: production
+    kubernetes:
+      # Obtained from GitLab
+      namespace: ${KUBERNETES_NAMESPACE}
