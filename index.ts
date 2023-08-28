@@ -49,5 +49,5 @@ app.get("/search", async (req, res) => {
 })
 
 app.listen(PORT, () => {
-  console.log("[Express] Listening on port ${PORT}")
+  console.log(`[Express] Listening on port ${PORT}`)
 })
