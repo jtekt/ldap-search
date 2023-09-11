@@ -3,8 +3,8 @@ package ldapUtils
 import (
 	"fmt"
 	"os"
-	"github.com/go-ldap/ldap/v3"
 
+	"github.com/go-ldap/ldap/v3"
 )
 
 
@@ -46,8 +46,9 @@ func Search(filter string)(*ldap.SearchResult, error){
 		nil,
 	)
 	result, err := connection.Search(searchReq)
+
 	if err != nil {
-			return nil, fmt.Errorf("Search Error: %s", err)
+		return nil, fmt.Errorf("Search Error: %s", err)
 	}
 
 	if len(result.Entries) > 0 {

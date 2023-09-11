@@ -31,13 +31,10 @@ func (p SearchController) Search(c *gin.Context) {
 	result, err := ldapUtils.Search(filter)
 	
 	if err != nil {
-		// TODO: don't panic
-		fmt.Println(err)
-		panic(err)
+		c.AbortWithStatusJSON(400, gin.H{"message": err })
 	}
 
 	// TODO: formatting
-
 
 	c.JSON(http.StatusOK, result)
 
