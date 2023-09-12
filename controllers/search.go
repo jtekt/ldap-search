@@ -32,6 +32,7 @@ func (p SearchController) Search(c *gin.Context) {
 	
 	if err != nil {
 		c.AbortWithStatusJSON(400, gin.H{"message": err })
+		return
 	}
 
 	// TODO: formatting
