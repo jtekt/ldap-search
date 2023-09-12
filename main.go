@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"ldap-search/auth"
 	"ldap-search/controllers"
@@ -26,6 +27,7 @@ func main (){
 	r.GET("/", func(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
       "application": "ldap-search",
+			"identification_url": os.Getenv("IDENTIFICATION_URL"),
     })
   })
 
