@@ -22,7 +22,7 @@ spec:
             - secretRef:
                 name: environment-variables
           ports:
-            - containerPort: 80
+            - containerPort: 8080
       imagePullSecrets:
         - name: ${K8S_ECR_SECRET}
       nodeSelector:
@@ -34,7 +34,7 @@ metadata:
   name: ${APPLICATION_NAME}
 spec:
   ports:
-    - port: 80
+    - port: 8080
       nodePort: ${K8S_SERVICE_PORT}
   selector:
     app: ${APPLICATION_NAME}
