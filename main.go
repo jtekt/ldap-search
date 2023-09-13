@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -23,20 +24,28 @@ func main (){
 
 	r := gin.Default()
 
+	identification_url := os.Getenv("IDENTIFICATION_URL")
+
+	fmt.Println(identification_url)
+
 	// Root route
 	r.GET("/", func(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
       "application": "ldap-search",
-			"identification_url": os.Getenv("IDENTIFICATION_URL"),
+			"identification_url": identification_url,
     })
   })
 
 	searchController := new(controllers.SearchController)
 	searchroutes := r.Group("/search")
-	searchroutes.Use(auth.Middleware)
-	{
-		searchroutes.GET("/", searchController.Search)
-	}
+
+	if identification_url != "" {
+		fmt.Println("[Auth] Authentication is NOT enabled")
+		searchroutes.Use(auth.Middleware)
+	} 
+
+	searchroutes.GET("/", searchController.Search)
+	
 
 	r.Run() 	
 	
