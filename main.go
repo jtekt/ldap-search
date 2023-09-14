@@ -40,9 +40,11 @@ func main (){
 	searchroutes := r.Group("/search")
 
 	if identification_url != "" {
-		fmt.Println("[Auth] Authentication is NOT enabled")
+		fmt.Println("[Auth] Authentication is enabled")
 		searchroutes.Use(auth.Middleware)
-	} 
+	} else {	
+		fmt.Println("[Auth] Authentication is NOT enabled")
+	}
 
 	searchroutes.GET("/", searchController.Search)
 	
