@@ -20,7 +20,7 @@ func Connect()  {
 	connection = _connection
 
 	if err != nil {
-			panic(err)
+		panic(err)
 	}
 
 }
@@ -37,7 +37,10 @@ func Unbind(){
 
 func Search(filter string)(*ldap.SearchResult, error){
 
+	Connect()
 	Bind()
+
+	defer connection.Close()
 
 	baseDN :=  os.Getenv("LDAP_SEARCH_OU")
 	searchReq := ldap.NewSearchRequest(

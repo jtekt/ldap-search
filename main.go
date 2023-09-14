@@ -7,7 +7,6 @@ import (
 
 	"ldap-search/auth"
 	"ldap-search/controllers"
-	ldapUtils "ldap-search/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -19,7 +18,7 @@ import (
 func main (){
 
 	godotenv.Load()
-	ldapUtils.Connect()
+	// ldapUtils.Connect()
 	// ldapUtils.Bind()
 
 	r := gin.Default()
