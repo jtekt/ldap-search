@@ -7,39 +7,37 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
-
-var connection *ldap.Conn
-
 // Note the return value
-func Connect()  {
+func Connect() (*ldap.Conn, error) {
 
 	hostname := os.Getenv("LDAP_HOSTNAME")
 	port := os.Getenv("LDAP_PORT")
 
-	_connection, err := ldap.DialURL(fmt.Sprintf("ldap://%s:%s", hostname, port))
-	connection = _connection
+	connection, err := ldap.DialURL(fmt.Sprintf("ldap://%s:%s", hostname, port))
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
+	return connection, nil
+
 }
 
-func Bind(){
-	username := os.Getenv("LDAP_USERNAME")
-	password := os.Getenv("LDAP_PASSWORD")
-	connection.Bind(username,password)
-}
-
-func Unbind(){
-	connection.Unbind()
-}
 
 func Search(filter string)(*ldap.SearchResult, error){
 
-	Connect()
-	Bind()
+	connection, err := Connect()
 
+	if err != nil {
+		return nil, fmt.Errorf("Connect error: %s", err)
+	}
+
+	username := os.Getenv("LDAP_USERNAME")
+	password := os.Getenv("LDAP_PASSWORD")
+	connection.Bind(username,password)
+
+
+	defer connection.Unbind()
 	defer connection.Close()
 
 	baseDN :=  os.Getenv("LDAP_SEARCH_OU")
@@ -55,8 +53,6 @@ func Search(filter string)(*ldap.SearchResult, error){
 		nil,
 	)
 	result, err := connection.Search(searchReq)
-
-	Unbind()
 
 	if err != nil {
 		return nil, fmt.Errorf("Search Error: %s", err)

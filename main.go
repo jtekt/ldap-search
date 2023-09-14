@@ -18,8 +18,6 @@ import (
 func main (){
 
 	godotenv.Load()
-	// ldapUtils.Connect()
-	// ldapUtils.Bind()
 
 	r := gin.Default()
 
