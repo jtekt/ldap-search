@@ -31,7 +31,13 @@ func Bind(){
 	connection.Bind(username,password)
 }
 
+func Unbind(){
+	connection.Unbind()
+}
+
 func Search(filter string)(*ldap.SearchResult, error){
+
+	Bind()
 
 	baseDN :=  os.Getenv("LDAP_SEARCH_OU")
 	searchReq := ldap.NewSearchRequest(
@@ -46,6 +52,8 @@ func Search(filter string)(*ldap.SearchResult, error){
 		nil,
 	)
 	result, err := connection.Search(searchReq)
+
+	Unbind()
 
 	if err != nil {
 		return nil, fmt.Errorf("Search Error: %s", err)

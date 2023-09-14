@@ -20,7 +20,7 @@ func main (){
 
 	godotenv.Load()
 	ldapUtils.Connect()
-	ldapUtils.Bind()
+	// ldapUtils.Bind()
 
 	r := gin.Default()
 
