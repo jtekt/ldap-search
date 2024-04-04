@@ -1,7 +1,13 @@
-# LDAP search
+# LDAP API
+
+## Usage example
+
+```
+GET /search?mail=example@jtekt.co.jp
+```
 
 ## Running in development
 
 ```
-nodemon --exec go run main.go --signal SIGTERM
+go run .
 ```

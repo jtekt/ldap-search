@@ -24,7 +24,7 @@ func Connect() (*ldap.Conn, error) {
 }
 
 
-func Search(filter string)(*ldap.SearchResult, error){
+func Search(filter string)([]*ldap.Entry, error){
 
 	connection, err := Connect()
 
@@ -59,7 +59,7 @@ func Search(filter string)(*ldap.SearchResult, error){
 	}
 
 	if len(result.Entries) > 0 {
-		return result, nil
+		return result.Entries, nil
 	} else {
 		return nil, fmt.Errorf("Couldn't fetch search entries")
 	}
