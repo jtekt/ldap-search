@@ -23,8 +23,6 @@ func main (){
 
 	identification_url := os.Getenv("IDENTIFICATION_URL")
 
-	fmt.Println(identification_url)
-
 	// Root route
 	r.GET("/", func(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{

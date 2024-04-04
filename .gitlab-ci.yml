@@ -57,10 +57,8 @@ deploy:
       --dry-run=client -o yaml
       | kubectl apply -f -
   script:
-    # create/update the deployment
     - envsubst < kubernetes_manifest.yml | kubectl apply -f -
   environment:
     name: production
     kubernetes:
-      # Obtained from GitLab
       namespace: ${KUBERNETES_NAMESPACE}

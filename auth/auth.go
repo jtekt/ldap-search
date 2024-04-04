@@ -1,15 +1,11 @@
 package auth
 
 import (
-	"os"
-	"net/http"
 	"fmt"
+	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
-
-
-
-
 )
 
 func Middleware(c *gin.Context){
@@ -23,11 +19,9 @@ func Middleware(c *gin.Context){
 
 	authHeader := authHeaders[0]
 
-	// TODO: check if URL is actually set
 	identificationUrl := os.Getenv("IDENTIFICATION_URL")
 
 	client := &http.Client{}
-
 
 	req, err := http.NewRequest("GET", identificationUrl, nil)
 	if err != nil {
