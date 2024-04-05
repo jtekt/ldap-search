@@ -71,12 +71,12 @@ func (p SearchController) Search(c *gin.Context) {
 	entries, err := ldapUtils.Search(filter)
 	
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err })
+		c.AbortWithStatusJSON(400, gin.H{"message": err.Error() })
 		return
 	}
 
 	formattedEntries := formatEntries(entries)
 
-	c.JSON(http.StatusOK, formattedEntries)
+	c.JSON(http.StatusOK, gin.H{"items": formattedEntries})
 
 }

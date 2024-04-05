@@ -55,13 +55,13 @@ func Search(filter string)([]*ldap.Entry, error){
 	result, err := connection.Search(searchReq)
 
 	if err != nil {
-		return nil, fmt.Errorf("Search Error: %s", err)
+		return nil, err
 	}
 
 	if len(result.Entries) > 0 {
 		return result.Entries, nil
 	} else {
-		return nil, fmt.Errorf("Couldn't fetch search entries")
+		return nil, fmt.Errorf("couldn't fetch search entries")
 	}
 
 	
