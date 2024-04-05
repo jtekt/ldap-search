@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 
 	ldapUtils "ldap-search/utils"
 
@@ -22,17 +24,33 @@ func formatFilter(fullQuery url.Values) string{
 	return fmt.Sprintf("(&%v)", filters)
 }
 
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+			if b == a {
+					return true
+			}
+	}
+	return false
+}
+
 func formatEntries(entries []*ldap.Entry) []map[string]interface{} {
+
+	ignoredFieldsEnvString := os.Getenv("IGNORED_FIELDS")
+	ignoredFields := strings.Split(ignoredFieldsEnvString, ",")
+
 	
 	var outputSlice []map[string]interface{}
 	for _, entry := range entries {
 		entryMap := make(map[string]interface{})
 		for _, attribute := range entry.Attributes {
-			if(len(attribute.Values) == 1) {
-				entryMap[attribute.Name] = attribute.Values[0]
-			} else {
-				entryMap[attribute.Name] = attribute.Values
+			if(!stringInSlice(attribute.Name, ignoredFields)) {
+				if(len(attribute.Values) == 1) {
+					entryMap[attribute.Name] = attribute.Values[0]
+				} else {
+					entryMap[attribute.Name] = attribute.Values
+				}
 			}
+			
 			
 		}
 		outputSlice = append(outputSlice, entryMap)

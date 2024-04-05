@@ -22,12 +22,14 @@ func main (){
 	r := gin.Default()
 
 	identification_url := os.Getenv("IDENTIFICATION_URL")
+	ignoredFields := os.Getenv("IGNORED_FIELDS")
 
 	// Root route
 	r.GET("/", func(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
       "application": "ldap-search",
 			"identification_url": identification_url,
+			"ignored_fields": ignoredFields,
     })
   })
 
