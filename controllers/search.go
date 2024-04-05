@@ -57,7 +57,6 @@ func (p SearchController) Search(c *gin.Context) {
 		return
 	}
 
-	// TODO: formatting
 	formattedEntries := formatEntries(entries)
 
 	c.JSON(http.StatusOK, formattedEntries)
