@@ -40,6 +40,10 @@ func Search(filter string)([]*ldap.Entry, error){
 	defer connection.Unbind()
 	defer connection.Close()
 
+	controls := []ldap.Control{
+		ldap.NewControlPaging(50),
+	}
+
 	baseDN :=  os.Getenv("LDAP_SEARCH_OU")
 	searchReq := ldap.NewSearchRequest(
 		baseDN,
@@ -50,9 +54,12 @@ func Search(filter string)([]*ldap.Entry, error){
 		false,
 		filter,
 		[]string{},
-		nil,
+		controls,
 	)
+
+	// PROBLEM: pagination not working
 	result, err := connection.Search(searchReq)
+
 
 	if err != nil {
 		return nil, err

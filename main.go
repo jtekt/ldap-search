@@ -8,6 +8,7 @@ import (
 	"ldap-search/auth"
 	"ldap-search/controllers"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -19,13 +20,15 @@ func main (){
 
 	godotenv.Load()
 
-	r := gin.Default()
-
 	identification_url := os.Getenv("IDENTIFICATION_URL")
 	ignoredFields := os.Getenv("IGNORED_FIELDS")
 
+	router := gin.Default()
+	router.Use(cors.Default())
+
+
 	// Root route
-	r.GET("/", func(c *gin.Context) {
+	router.GET("/", func(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
       "application": "ldap-search",
 			"identification_url": identification_url,
@@ -33,8 +36,9 @@ func main (){
     })
   })
 
+
 	searchController := new(controllers.SearchController)
-	searchroutes := r.Group("/search")
+	searchroutes := router.Group("/search")
 
 	if identification_url != "" {
 		fmt.Println("[Auth] Authentication is enabled")
@@ -46,6 +50,6 @@ func main (){
 	searchroutes.GET("/", searchController.Search)
 	
 
-	r.Run() 	
+	router.Run() 	
 	
 }
