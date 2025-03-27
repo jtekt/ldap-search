@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 
 	ldapUtils "ldap-search/utils"
@@ -13,10 +14,9 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
-
 type SearchController struct{}
 
-func formatFilter(fullQuery url.Values) string{
+func formatFilter(fullQuery url.Values) string {
 	filters := ""
 	for key, values := range fullQuery {
 		filters += fmt.Sprintf("(%v=%v)", key, values[0])
@@ -25,58 +25,44 @@ func formatFilter(fullQuery url.Values) string{
 }
 
 func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-			if b == a {
-					return true
-			}
-	}
-	return false
+	return slices.Contains(list, a)
 }
 
 func formatEntries(entries []*ldap.Entry) []map[string]interface{} {
-
 	ignoredFieldsEnvString := os.Getenv("IGNORED_FIELDS")
 	ignoredFields := strings.Split(ignoredFieldsEnvString, ",")
 
-	
 	var outputSlice []map[string]interface{}
 	for _, entry := range entries {
 		entryMap := make(map[string]interface{})
 		for _, attribute := range entry.Attributes {
-			if(!stringInSlice(attribute.Name, ignoredFields)) {
-				if(len(attribute.Values) == 1) {
-					entryMap[attribute.Name] = attribute.Values[0]
+			if !stringInSlice(attribute.Name, ignoredFields) {
+				if len(attribute.Values) == 1 {
+					entryMap[attribute.Name] = attribute.Values[0] // Store as string
 				} else {
-					entryMap[attribute.Name] = attribute.Values
+					entryMap[attribute.Name] = attribute.Values // Store as []string
 				}
 			}
-			
-			
 		}
 		outputSlice = append(outputSlice, entryMap)
 	}
 
 	return outputSlice
-	
 }
 
 func (p SearchController) Search(c *gin.Context) {
-
-
 	fullQuery := c.Request.URL.Query()
-	
+
 	filter := formatFilter(fullQuery)
-	
 
 	entries, err := ldapUtils.Search(filter)
-	
+
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error() })
+		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
 		return
 	}
 
 	formattedEntries := formatEntries(entries)
 
 	c.JSON(http.StatusOK, gin.H{"items": formattedEntries})
-
 }

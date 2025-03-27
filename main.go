@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -13,43 +12,33 @@ import (
 	"github.com/joho/godotenv"
 )
 
-
-
-
-func main (){
-
+func main() {
 	godotenv.Load()
 
-	identification_url := os.Getenv("IDENTIFICATION_URL")
+	JWKS_URI := os.Getenv("JWKS_URI")
 	ignoredFields := os.Getenv("IGNORED_FIELDS")
 
 	router := gin.Default()
 	router.Use(cors.Default())
 
-
 	// Root route
 	router.GET("/", func(c *gin.Context) {
-    c.JSON(http.StatusOK, gin.H{
-      "application": "ldap-search",
-			"identification_url": identification_url,
+		c.JSON(http.StatusOK, gin.H{
+			"application":    "ldap-search",
+			"JWKS_URI":       JWKS_URI,
 			"ignored_fields": ignoredFields,
-    })
-  })
+		})
+	})
 
+	protectedRoutes := router.Group("/")
 
-	searchController := new(controllers.SearchController)
-	searchroutes := router.Group("/search")
-
-	if identification_url != "" {
-		fmt.Println("[Auth] Authentication is enabled")
-		searchroutes.Use(auth.Middleware)
-	} else {	
-		fmt.Println("[Auth] Authentication is NOT enabled")
+	if JWKS_URI != "" {
+		protectedRoutes.Use(auth.Middleware)
 	}
 
-	searchroutes.GET("/", searchController.Search)
-	
+	searchRoutes := protectedRoutes.Group("/search")
+	searchController := new(controllers.SearchController)
+	searchRoutes.GET("/", searchController.Search)
 
-	router.Run() 	
-	
+	router.Run()
 }
