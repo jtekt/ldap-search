@@ -36,7 +36,7 @@ func getKeyset(certsUrl string) (jwk.Set, error) {
 
 		// Register the JWKS URL with refresh intervals
 		err = cache.Register(bgCtx, certsUrl,
-			jwk.WithMaxInterval(6*time.Hour),    // Max 6 hours
+			jwk.WithMaxInterval(24*time.Hour),   // Max 24 hours
 			jwk.WithMinInterval(15*time.Minute), // Min 15 minutes
 		)
 		if err != nil {
@@ -53,7 +53,8 @@ func getKeyset(certsUrl string) (jwk.Set, error) {
 	})
 
 	if cache == nil {
-		return nil, err // Return the error from cache initialization
+		log.Printf("[ERROR] Cache is nil, initialization failed")
+		return nil, err
 	}
 
 	keyset, err = cache.CachedSet(certsUrl)
