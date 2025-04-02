@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/lestrrat-go/httprc/v3"
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/lestrrat-go/jwx/v3/jwt"
@@ -66,63 +65,60 @@ func getKeyset(certsUrl string) (jwk.Set, error) {
 }
 
 // Middleware creates an authentication middleware for OIDC token validation
-func Middleware(ctx *gin.Context) {
-	// Get JWKS URL from environment variable
-	certsUrl, hasEnv := os.LookupEnv("JWKS_URI")
-	if !hasEnv {
-		log.Printf("[ERROR] JWKS_URI not set")
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "JWKS_URI not set",
-			"code":    "ENV_MISSING",
-		})
-		return
-	}
+func Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Get JWKS URL from environment variable
+		certsUrl, hasEnv := os.LookupEnv("JWKS_URI")
+		if !hasEnv {
+			log.Printf("[ERROR] JWKS_URI not set")
+			sendError(w, http.StatusInternalServerError, "JWKS_URI not set", "ENV_MISSING")
+			return
+		}
 
-	// Get the cached keyset
-	keyset, err := getKeyset(certsUrl)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get cached JWKS: %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "Authentication service unavailable",
-			"code":    "JWKS_CACHE_FAILED",
-		})
-		return
-	}
+		// Get the cached keyset
+		keyset, err := getKeyset(certsUrl)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get cached JWKS: %v", err)
+			sendError(w, http.StatusInternalServerError, "Authentication service unavailable", "JWKS_CACHE_FAILED")
+			return
+		}
 
-	// Check for Authorization header
-	authHeader := ctx.GetHeader("Authorization")
-	if authHeader == "" {
-		log.Printf("[WARNING] Authorization header not set")
-		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"message": "Authorization header not set",
-			"code":    "AUTH_HEADER_MISSING",
-		})
-		return
-	}
+		// Check for Authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			log.Printf("[WARNING] Authorization header not set")
+			sendError(w, http.StatusForbidden, "Authorization header not set", "AUTH_HEADER_MISSING")
+			return
+		}
 
-	// Extract Bearer token
-	parts := strings.Split(authHeader, "Bearer ")
-	if len(parts) != 2 {
-		log.Printf("[WARNING] Invalid Authorization header format: %s", authHeader)
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-			"message": "Invalid Authorization header format",
-			"code":    "AUTH_HEADER_INVALID",
-		})
-		return
-	}
+		// Extract Bearer token
+		parts := strings.Split(authHeader, "Bearer ")
+		if len(parts) != 2 {
+			log.Printf("[WARNING] Invalid Authorization header format: %s", authHeader)
+			sendError(w, http.StatusUnauthorized, "Invalid Authorization header format", "AUTH_HEADER_INVALID")
+			return
+		}
 
-	jwtToken := parts[1]
+		jwtToken := parts[1]
 
-	// Parse and verify token using the cached keyset
-	_, err = jwt.Parse([]byte(jwtToken), jwt.WithKeySet(keyset))
-	if err != nil {
-		log.Printf("[WARNING] Token verification failed: %v", err)
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-			"message": "Invalid token",
-			"code":    "TOKEN_INVALID",
-		})
-		return
-	}
+		// Parse and verify token using the cached keyset
+		_, err = jwt.Parse([]byte(jwtToken), jwt.WithKeySet(keyset))
+		if err != nil {
+			log.Printf("[WARNING] Token verification failed: %v", err)
+			sendError(w, http.StatusUnauthorized, "Invalid token", "TOKEN_INVALID")
+			return
+		}
 
-	ctx.Next()
+		// Token is valid, proceed to next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
+// sendError is a helper function to send consistent JSON error responses
+func sendError(w http.ResponseWriter, status int, message, code string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	// Using a consistent JSON format with proper escaping
+	errorResponse := `{"message": "` + message + `", "code": "` + code + `"}`
+	w.Write([]byte(errorResponse))
 }

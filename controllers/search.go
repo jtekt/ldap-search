@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -10,7 +11,6 @@ import (
 
 	ldapUtils "ldap-search/utils"
 
-	"github.com/gin-gonic/gin"
 	"github.com/go-ldap/ldap/v3"
 )
 
@@ -50,19 +50,29 @@ func formatEntries(entries []*ldap.Entry) []map[string]interface{} {
 	return outputSlice
 }
 
-func (p SearchController) Search(c *gin.Context) {
-	fullQuery := c.Request.URL.Query()
+func (p *SearchController) Search(w http.ResponseWriter, r *http.Request) {
+	// Only allow GET method
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get query parameters
+	fullQuery := r.URL.Query()
 
 	filter := formatFilter(fullQuery)
 
 	entries, err := ldapUtils.Search(filter)
-
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest) // 400
+		json.NewEncoder(w).Encode(map[string]string{"message": err.Error()})
 		return
 	}
 
 	formattedEntries := formatEntries(entries)
 
-	c.JSON(http.StatusOK, gin.H{"items": formattedEntries})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{"items": formattedEntries})
 }
