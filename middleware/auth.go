@@ -1,7 +1,8 @@
-package auth
+package middleware
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -65,13 +66,13 @@ func getKeyset(certsUrl string) (jwk.Set, error) {
 }
 
 // Middleware creates an authentication middleware for OIDC token validation
-func Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Auth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		// Get JWKS URL from environment variable
 		certsUrl, hasEnv := os.LookupEnv("JWKS_URI")
 		if !hasEnv {
 			log.Printf("[ERROR] JWKS_URI not set")
-			sendError(w, http.StatusInternalServerError, "JWKS_URI not set", "ENV_MISSING")
+			http.Error(w, fmt.Sprintf(`{"message": "%s", "code": "%v"}`, "JWKS_URI not set", "ENV_MISSING"), http.StatusInternalServerError)
 			return
 		}
 
@@ -79,7 +80,7 @@ func Middleware(next http.Handler) http.Handler {
 		keyset, err := getKeyset(certsUrl)
 		if err != nil {
 			log.Printf("[ERROR] Failed to get cached JWKS: %v", err)
-			sendError(w, http.StatusInternalServerError, "Authentication service unavailable", "JWKS_CACHE_FAILED")
+			http.Error(w, fmt.Sprintf(`{"message": "%s", "code": "%v"}`, err.Error(), "JWKS_CACHE_FAILED"), http.StatusInternalServerError)
 			return
 		}
 
@@ -87,7 +88,7 @@ func Middleware(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			log.Printf("[WARNING] Authorization header not set")
-			sendError(w, http.StatusForbidden, "Authorization header not set", "AUTH_HEADER_MISSING")
+			http.Error(w, fmt.Sprintf(`{"message": "%s", "code": "%v"}`, "Authorization header not set", "AUTH_HEADER_MISSING"), http.StatusForbidden)
 			return
 		}
 
@@ -95,7 +96,7 @@ func Middleware(next http.Handler) http.Handler {
 		parts := strings.Split(authHeader, "Bearer ")
 		if len(parts) != 2 {
 			log.Printf("[WARNING] Invalid Authorization header format: %s", authHeader)
-			sendError(w, http.StatusUnauthorized, "Invalid Authorization header format", "AUTH_HEADER_INVALID")
+			http.Error(w, fmt.Sprintf(`{"message": "%s", "code": "%v"}`, "Invalid Authorization header format", "AUTH_HEADER_INVALID"), http.StatusUnauthorized)
 			return
 		}
 
@@ -105,20 +106,11 @@ func Middleware(next http.Handler) http.Handler {
 		_, err = jwt.Parse([]byte(jwtToken), jwt.WithKeySet(keyset))
 		if err != nil {
 			log.Printf("[WARNING] Token verification failed: %v", err)
-			sendError(w, http.StatusUnauthorized, "Invalid token", "TOKEN_INVALID")
+			http.Error(w, fmt.Sprintf(`{"message": "%s", "code": "%v"}`, "Invalid token", "TOKEN_INVALID"), http.StatusUnauthorized)
 			return
 		}
 
 		// Token is valid, proceed to next handler
 		next.ServeHTTP(w, r)
-	})
-}
-
-// sendError is a helper function to send consistent JSON error responses
-func sendError(w http.ResponseWriter, status int, message, code string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	// Using a consistent JSON format with proper escaping
-	errorResponse := `{"message": "` + message + `", "code": "` + code + `"}`
-	w.Write([]byte(errorResponse))
+	}
 }
