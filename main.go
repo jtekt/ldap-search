@@ -23,6 +23,6 @@ func main() {
 	mux.Handle("GET /search", middleware.ChainMiddleware(handlers.SearchHandler, middleware.Logging, middleware.Cors, middleware.Auth))
 
 	// Start server with logging
-	log.Printf(`[INFO] Starting server on "%s"`, cfg.Port)
+	log.Printf(`[INFO] Starting server on port "%s"`, cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, mux))
 }

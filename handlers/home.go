@@ -8,20 +8,10 @@ import (
 
 // HomeHandler serves app metadata, excluding sensitive LDAP data
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	cfg := config.LoadConfig()
+	cfg := config.GetConfig()
 
 	// Create a sanitized response struct
-	response := struct {
-		JWKSURI       string   `json:"jwks_uri"`
-		LDAPHostname  string   `json:"ldap_hostname"`
-		LDAPSearchOU  string   `json:"ldap_search_ou"`
-		IgnoredFields []string `json:"ignored_fields"`
-	}{
-		JWKSURI:       cfg.JWKSURI,
-		LDAPHostname:  cfg.LDAPHostname,
-		LDAPSearchOU:  cfg.LDAPSearchOU,
-		IgnoredFields: cfg.IgnoredFields,
-	}
+	response := cfg
 
 	// Set response headers
 	w.Header().Set("Content-Type", "application/json")

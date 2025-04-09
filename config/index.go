@@ -18,7 +18,7 @@ type Config struct {
 	// LDAP Configuration
 	LDAPHostname string `json:"ldap_hostname"`
 	LDAPSearchOU string `json:"ldap_search_ou"`
-	LDAPUsername string `json:"ldap_username"`
+	LDAPUsername string `json:"-"` // Don't expose username in JSON responses
 	LDAPPassword string `json:"-"` // Don't expose passwords in JSON responses
 
 	// Fields to ignore in LDAP search results
@@ -50,7 +50,7 @@ func LoadConfig() Config {
 	// Load env
 	err := godotenv.Load()
 	if err != nil {
-		log.Panicf("[ERROR] Failed to load .env file: %v", err)
+		log.Printf("[WARN] No .env file found or failed to load: %v (continuing...)", err)
 	}
 
 	return GetConfig()
