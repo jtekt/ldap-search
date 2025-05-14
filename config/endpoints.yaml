@@ -1,0 +1,26 @@
+- path: "/api/v1/groups"
+  filter: "(&(objectClass=group)(displayName=部署G_*))"
+  search_params: ["cn", "displayName", "memberOf", "department"]
+  attributes:
+    [
+      "cn",
+      "distinguishedName",
+      "displayName",
+      "memberOf",
+      "department",
+      "info",
+      "msDS-PhoneticDisplayName",
+      "mail",
+      "whenChanged",
+      "whenCreated",
+    ]
+- path: "/api/v1/groups/{cn}"
+  filter: "(&(objectClass=group)(CN={cn}))"
+  search_params: []
+  # All data
+  attributes: []
+- path: "/api/v1/groups/{cn}/groups"
+  filter: "(&(objectClass=group)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))"
+  search_params: []
+  # All data
+  attributes: []

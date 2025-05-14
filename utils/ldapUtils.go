@@ -2,61 +2,52 @@ package ldapUtils
 
 import (
 	"fmt"
-	"os"
+
+	"ldap-search/config"
 
 	"github.com/go-ldap/ldap/v3"
 )
 
-// Note the return value
-func Connect() (*ldap.Conn, error) {
-	hostname := os.Getenv("LDAP_HOSTNAME")
-	port := os.Getenv("LDAP_PORT")
-
-	connection, err := ldap.DialURL(fmt.Sprintf("ldap://%s:%s", hostname, port))
-
+// Connect establishes an LDAP connection using config
+func Connect(cfg config.Config) (*ldap.Conn, error) {
+	connection, err := ldap.DialURL(fmt.Sprintf("ldap://%s:%s", cfg.LDAPHostname, cfg.LDAPPort))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to LDAP: %v", err)
 	}
-
 	return connection, nil
 }
 
-func Search(filter string) ([]*ldap.Entry, error) {
-	connection, err := Connect()
-
+// Search performs an LDAP search with pagination
+func Search(cfg config.Config, filter string, attributes []string) ([]*ldap.Entry, error) {
+	connection, err := Connect(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("Connect error: %s", err)
+		return nil, fmt.Errorf("connect error: %v", err)
 	}
-
-	username := os.Getenv("LDAP_USERNAME")
-	password := os.Getenv("LDAP_PASSWORD")
-	connection.Bind(username, password)
-
 	defer connection.Unbind()
 	defer connection.Close()
 
-	baseDN := os.Getenv("LDAP_SEARCH_OU")
+	err = connection.Bind(cfg.LDAPUsername, cfg.LDAPPassword)
+	if err != nil {
+		return nil, fmt.Errorf("bind error: %v", err)
+	}
+
+	// Perform search with paging
 	searchReq := ldap.NewSearchRequest(
-		baseDN,
+		cfg.LDAPSearchOU,
 		ldap.ScopeWholeSubtree,
 		ldap.NeverDerefAliases,
 		0,
 		0,
 		false,
 		filter,
-		[]string{},
-		nil, // controls,
+		attributes,
+		nil,
 	)
 
-	result, err := connection.SearchWithPaging(searchReq, 100)
-
+	result, err := connection.SearchWithPaging(searchReq, 1000)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("search error: %v", err)
 	}
 
-	if len(result.Entries) > 0 {
-		return result.Entries, nil
-	} else {
-		return nil, fmt.Errorf("couldn't fetch search entries")
-	}
+	return result.Entries, nil
 }
