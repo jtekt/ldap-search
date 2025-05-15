@@ -116,26 +116,13 @@ The Swagger UI provides detailed documentation for all endpoints, including sche
 
 Configure the API using the following environment variables (e.g., in a `.env` file or via your environment):
 
-```env
-# OIDC Configuration
-JWKS_URI=<OIDC JWKS URI, e.g., https://your-oidc-provider/.well-known/jwks.json>
-
-# LDAP Configuration
-LDAP_HOSTNAME=<LDAP server hostname, e.g., ldap.example.com>
-LDAP_SEARCH_OU=<LDAP search base, e.g., ou=users,dc=example,dc=com>
-LDAP_USERNAME=<LDAP bind username, e.g., cn=admin,dc=example,dc=com>
-LDAP_PASSWORD=<LDAP bind password>
-
-# Optional: Server Configuration
-PORT=<Port to run the API, default: 8080>
-```
-
 Example `.env` file:
 
 ```env
 JWKS_URI=https://your-oidc-provider/.well-known/jwks.json
 LDAP_HOSTNAME=ldap.example.com
 LDAP_SEARCH_OU=ou=users,dc=example,dc=com
+LDAP_PORT=389
 LDAP_USERNAME=admin
 LDAP_PASSWORD=secret
 

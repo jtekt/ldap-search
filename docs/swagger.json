@@ -1,122 +1,494 @@
 {
-    "swagger": "2.0",
-    "info": {
-        "description": "This API provides endpoints to search an LDAP directory based on configurable filters and attributes. It supports dynamic endpoints defined in the configuration, allowing searches by path parameters (e.g., /api/{id}) and query parameters (e.g., ?search=value). All endpoints except / and /health require Bearer token authentication via the Authorization header.",
-        "title": "LDAP Search API",
-        "contact": {
-            "name": "Support Team",
-            "email": "kevin_fabel@jtekt.co.jp"
-        },
-        "version": "1.0"
+  "swagger": "2.0",
+  "info": {
+    "description": "This API provides endpoints to search an LDAP directory based on configurable filters and attributes. It supports dynamic endpoints defined in the configuration, allowing searches by path parameters (e.g., /api/{id}) and query parameters (e.g., ?search=value). All endpoints except / and /health require Bearer token authentication via the Authorization header.",
+    "title": "LDAP Search API",
+    "contact": {
+      "name": "Support Team",
+      "email": "kevin_fabel@jtekt.co.jp"
     },
-    "basePath": "/",
-    "paths": {
-        "/": {
-            "get": {
-                "description": "Returns the application configuration, including endpoint details, excluding sensitive LDAP connection data",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "metadata"
-                ],
-                "summary": "Get application metadata",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/config.Config"
-                        }
-                    }
-                }
+    "version": "1.0"
+  },
+  "basePath": "/",
+  "paths": {
+    "/": {
+      "get": {
+        "description": "Returns the application configuration, including endpoint details, excluding sensitive LDAP connection data",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get application metadata",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/config.Config"
             }
-        },
-        "/health": {
-            "get": {
-                "description": "Returns a simple status to indicate the application is running",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Health check",
-                "responses": {
-                    "200": {
-                        "description": "Example response: {\\\"status\\\": \\\"ok\\\"}",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
+          }
         }
+      }
     },
-    "definitions": {
-        "config.Config": {
-            "type": "object",
-            "properties": {
-                "endpoints": {
-                    "description": "Endpoint configurations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/config.EndpointConfig"
+    "/api/v1/groups": {
+      "get": {
+        "description": "Dynamic endpoint generated from config. Filter: (\u0026(objectClass=group)(displayName=部署G_*))",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "dynamic"
+        ],
+        "summary": "Dynamic Endpoint: /api/v1/groups",
+        "parameters": [
+          {
+            "description": "Query parameter for cn",
+            "name": "cn",
+            "in": "query"
+          },
+          {
+            "description": "Query parameter for displayName",
+            "name": "displayName",
+            "in": "query"
+          },
+          {
+            "description": "Query parameter for memberOf",
+            "name": "memberOf",
+            "in": "query"
+          },
+          {
+            "description": "Query parameter for department",
+            "name": "department",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "cn": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "department": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "displayName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "distinguishedName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "info": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "mail": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "memberOf": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "msDS-PhoneticDisplayName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "whenChanged": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "whenCreated": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
                     }
-                },
-                "jwks_uri": {
-                    "description": "OIDC Configuration",
-                    "type": "string"
-                },
-                "ldap_hostname": {
-                    "description": "LDAP Configuration",
-                    "type": "string"
-                },
-                "ldap_port": {
-                    "type": "string"
-                },
-                "ldap_search_ou": {
-                    "type": "string"
-                },
-                "port": {
-                    "type": "string"
+                  ]
                 }
+              }
             }
-        },
-        "config.EndpointConfig": {
-            "type": "object",
-            "properties": {
-                "attributes": {
-                    "description": "Attributes to return",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
+          },
+          "400": {
+            "description": "Bad request due to invalid parameters or server error",
+            "schema": {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "code": {
+                      "description": "A unique error code for programmatic handling",
+                      "type": "string"
+                    },
+                    "message": {
+                      "description": "A human-readable error message",
+                      "type": "string"
                     }
-                },
-                "filter": {
-                    "description": "Base LDAP filter",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "e.g., \"/api/v1/groups\"",
-                    "type": "string"
-                },
-                "search_params": {
-                    "description": "Allowed search attributes",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                  }
                 }
+              }
             }
+          }
         }
+      }
+    },
+    "/api/v1/groups/{cn}": {
+      "get": {
+        "description": "Dynamic endpoint generated from config. Filter: (\u0026(objectClass=group)(displayName=部署G_*)(cn={cn}))",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "dynamic"
+        ],
+        "summary": "Dynamic Endpoint: /api/v1/groups/{cn}",
+        "parameters": [
+          {
+            "description": "Path parameter for cn",
+            "name": "cn",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request due to invalid parameters or server error",
+            "schema": {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "code": {
+                      "description": "A unique error code for programmatic handling",
+                      "type": "string"
+                    },
+                    "message": {
+                      "description": "A human-readable error message",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{cn}/groups": {
+      "get": {
+        "description": "Dynamic endpoint generated from config. Filter: (\u0026(objectClass=group)(displayName=部署G_*)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "dynamic"
+        ],
+        "summary": "Dynamic Endpoint: /api/v1/groups/{cn}/groups",
+        "parameters": [
+          {
+            "description": "Path parameter for cn",
+            "name": "cn",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request due to invalid parameters or server error",
+            "schema": {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "code": {
+                      "description": "A unique error code for programmatic handling",
+                      "type": "string"
+                    },
+                    "message": {
+                      "description": "A human-readable error message",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "description": "Dynamic endpoint generated from config. Filter: (\u0026(objectClass=user)(cn=00*)(mail=*))",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "dynamic"
+        ],
+        "summary": "Dynamic Endpoint: /api/v1/users",
+        "parameters": [
+          {
+            "description": "Query parameter for cn",
+            "name": "cn",
+            "in": "query"
+          },
+          {
+            "description": "Query parameter for mail",
+            "name": "mail",
+            "in": "query"
+          },
+          {
+            "description": "Query parameter for displayName",
+            "name": "displayName",
+            "in": "query"
+          },
+          {
+            "description": "Query parameter for displayNamePrintable",
+            "name": "displayNamePrintable",
+            "in": "query"
+          },
+          {
+            "description": "Query parameter for memberOf",
+            "name": "memberOf",
+            "in": "query"
+          },
+          {
+            "description": "Query parameter for department",
+            "name": "department",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request due to invalid parameters or server error",
+            "schema": {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "code": {
+                      "description": "A unique error code for programmatic handling",
+                      "type": "string"
+                    },
+                    "message": {
+                      "description": "A human-readable error message",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Returns a simple status to indicate the application is running",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "health"
+        ],
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Example response: {\\\"status\\\": \\\"ok\\\"}",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
+  },
+  "definitions": {
+    "config.Config": {
+      "type": "object",
+      "properties": {
+        "endpoints": {
+          "description": "Endpoint configurations",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/config.EndpointConfig"
+          }
+        },
+        "jwks_uri": {
+          "description": "OIDC Configuration",
+          "type": "string"
+        },
+        "ldap_hostname": {
+          "description": "LDAP Configuration",
+          "type": "string"
+        },
+        "ldap_port": {
+          "type": "string"
+        },
+        "ldap_search_ou": {
+          "type": "string"
+        },
+        "port": {
+          "type": "string"
+        }
+      }
+    },
+    "config.EndpointConfig": {
+      "type": "object",
+      "properties": {
+        "attributes": {
+          "description": "Attributes to return",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "filter": {
+          "description": "Base LDAP filter",
+          "type": "string"
+        },
+        "path": {
+          "description": "e.g., \"/api/v1/groups\"",
+          "type": "string"
+        },
+        "search_params": {
+          "description": "Allowed search attributes",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "Bearer": {
+      "description": "Bearer token authentication. Use format: Bearer \u003ctoken\u003e",
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
 }

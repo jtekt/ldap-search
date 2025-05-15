@@ -19,6 +19,10 @@ func Connect(cfg config.Config) (*ldap.Conn, error) {
 
 // Search performs an LDAP search with pagination
 func Search(cfg config.Config, filter string, attributes []string) ([]*ldap.Entry, error) {
+	// TODO: Add caching logic here, maybe 20 minutes
+	// Depending on the query it can take a while to get results
+	// For example, if the query is too broad, it can take a long time to get results
+
 	connection, err := Connect(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("connect error: %v", err)

@@ -15,12 +15,43 @@
       "whenCreated",
     ]
 - path: "/api/v1/groups/{cn}"
-  filter: "(&(objectClass=group)(CN={cn}))"
+  filter: "(&(objectClass=group)(displayName=部署G_*)(cn={cn}))"
   search_params: []
   # All data
   attributes: []
 - path: "/api/v1/groups/{cn}/groups"
-  filter: "(&(objectClass=group)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))"
+  filter: "(&(objectClass=group)(displayName=部署G_*)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))"
   search_params: []
   # All data
   attributes: []
+- path: "/api/v1/users"
+  filter: "(&(objectClass=user)(cn=00*)(mail=*))"
+  search_params:
+    [
+      "cn",
+      "mail",
+      "displayName",
+      "displayNamePrintable",
+      "memberOf",
+      "department",
+    ]
+  attributes:
+    [
+      "cn",
+      "mail",
+      "sAMAccountName",
+      "displayNamePrintable",
+      "displayName",
+      "msDS-PhoneticDisplayName",
+      "msDS-PhoneticFirstName",
+      "msDS-PhoneticLastName",
+      "extensionAttribute1",
+      "extensionAttribute2",
+      "extensionAttribute3",
+      "extensionAttribute4",
+      "extensionAttribute5",
+      "department",
+      "physicalDeliveryOfficeName",
+      "title",
+      "manager",
+    ]

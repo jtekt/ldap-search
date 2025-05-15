@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"ldap-search/config"
@@ -74,19 +75,39 @@ func (h *LdapHandler) handleLdapSearch(ep config.EndpointConfig) http.HandlerFun
 
 		query := r.URL.Query()
 		pathParams := extractPathParams(ep.Path, r.URL.Path)
-		searchFilters := []string{}
+
+		// Create a map of valid search parameters
+		validMap := make(map[string]bool)
+		for _, key := range ep.SearchParams {
+			validMap[key] = true
+		}
+
+		// Validate: check if any query key is not in validKeys
+		invalidQueryParams := []string{}
+		for key := range query {
+			if !validMap[key] {
+				invalidQueryParams = append(invalidQueryParams, key)
+			}
+		}
+
+		// If there are invalid query parameters, return an error
+		if len(invalidQueryParams) > 0 {
+			formatResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid query parameters: %v", strings.Join(invalidQueryParams, ", ")), "INVALID_QUERY_PARAMS")
+			return
+		}
 
 		// First: Replace path parameters like {cn} in the filter
 		for _, param := range getPathParams(ep.Path) {
 			if value, ok := pathParams[param]; ok {
-				filter = strings.ReplaceAll(filter, "{"+param+"}", escapeFilterValue(value))
+				filter = strings.ReplaceAll(filter, "{"+param+"}", sanitize(value))
 			}
 		}
 
+		searchFilters := []string{}
 		// Second: Add filters from SearchParams (from ?query=...)
 		for _, param := range ep.SearchParams {
 			if value := query.Get(param); value != "" {
-				searchFilters = append(searchFilters, fmt.Sprintf("(%s=%s)", param, escapeFilterValue(value)))
+				searchFilters = append(searchFilters, fmt.Sprintf("(%s=%s)", param, sanitize(value)))
 			}
 		}
 
@@ -135,14 +156,13 @@ func formatEntries(entries []*ldap.Entry) []map[string]interface{} {
 	return result
 }
 
-// escapeFilterValue escapes special characters in LDAP filter values
-func escapeFilterValue(value string) string {
-	value = strings.ReplaceAll(value, `\`, `\\`)
-	value = strings.ReplaceAll(value, `*`, `\*`)
-	value = strings.ReplaceAll(value, `(`, `\(`)
-	value = strings.ReplaceAll(value, `)`, `\)`)
-	value = strings.ReplaceAll(value, "\x00", `\00`)
-	return value
+// Allow letters, digits, space, dash, underscore, dot, and @
+var allowedChars = regexp.MustCompile(`[^a-zA-Z0-9 ._@-]`)
+
+// sanitize removes disallowed characters from a string
+func sanitize(value string) string {
+	// Remove characters not in the allowed set
+	return allowedChars.ReplaceAllString(value, "")
 }
 
 // getPathParams extracts keys from a path pattern like /groups/{cn}

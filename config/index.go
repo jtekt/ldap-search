@@ -35,7 +35,7 @@ type Config struct {
 	Endpoints []EndpointConfig `json:"endpoints"`
 }
 
-// LoadConfig initiates dotenv and loads configuration from environment variables and YAML
+// LoadConfig loads the configuration from environment variables and YAML files
 func LoadConfig() Config {
 	// Load .env file
 	err := godotenv.Load()
@@ -44,15 +44,11 @@ func LoadConfig() Config {
 	}
 
 	// Load base configuration from environment variables
-	cfg := GetConfig()
-
-	// Load endpoint configurations from YAML
-	cfg.Endpoints = loadEndpointsConfig()
-
-	return cfg
+	return GetConfig()
 }
 
-// GetConfig loads configuration from environment variables
+// GetConfig retrieves the configuration from environment variables and YAML
+// It uses default values if the environment variables are not set
 func GetConfig() Config {
 	return Config{
 		// Server
@@ -67,10 +63,13 @@ func GetConfig() Config {
 		LDAPSearchOU: getEnv("LDAP_SEARCH_OU", ""),
 		LDAPUsername: getEnv("LDAP_USERNAME", ""),
 		LDAPPassword: getEnv("LDAP_PASSWORD", ""),
+
+		// Endpoints
+		Endpoints: loadEndpointsConfig(),
 	}
 }
 
-// loadEndpointsConfig loads endpoint configurations from a YAML file
+// Loads endpoint configurations from a YAML file
 func loadEndpointsConfig() []EndpointConfig {
 	var endpoints []EndpointConfig
 
@@ -97,10 +96,6 @@ func loadEndpointsConfig() []EndpointConfig {
 		if pathPlaceholders != filterPlaceholders {
 			log.Fatalf("mismatch in placeholders: path (%s) has %d '{}', filter (%s) has %d '{}'",
 				ep.Path, pathPlaceholders, ep.Filter, filterPlaceholders)
-		}
-		// Ensure attributes are set; default to ["dn", "cn"] if empty
-		if len(ep.Attributes) == 0 {
-			ep.Attributes = []string{"dn", "cn"}
 		}
 	}
 
