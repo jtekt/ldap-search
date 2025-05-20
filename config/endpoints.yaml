@@ -1,57 +1,105 @@
-- path: "/api/v1/groups"
-  filter: "(&(objectClass=group)(displayName=部署G_*))"
+# ----------------------------------------------------------------------
+# LDAP API Endpoints Configuration
+# ----------------------------------------------------------------------
+
+# This YAML file defines multiple endpoints for querying an LDAP server.
+# Each endpoint has:
+#   - path           : The URL pattern used to access this endpoint.
+#   - filter         : An LDAP filter string to narrow down search results.
+#   - search_params  : Attributes allowed for additional query-based filtering. If not specified, no params are accepted.
+#   - attributes     : Attributes to be returned in the response. If not specified, all attributes are returned.
+
+# ----------------------------------------------------------------------
+# Organizational Units
+# ----------------------------------------------------------------------
+# Endpoints to query LDAP groups (objectClass=group) representing org units.
+
+# List all organization units
+- path: "/api/v1/org-units"
+  filter: "(&(objectClass=group))"
   search_params: ["cn", "displayName", "memberOf", "department"]
-  attributes:
-    [
-      "cn",
-      "distinguishedName",
-      "displayName",
-      "memberOf",
-      "department",
-      "info",
-      "msDS-PhoneticDisplayName",
-      "mail",
-      "whenChanged",
-      "whenCreated",
-    ]
-- path: "/api/v1/groups/{cn}"
-  filter: "(&(objectClass=group)(displayName=部署G_*)(cn={cn}))"
-  search_params: []
-  # All data
-  attributes: []
-- path: "/api/v1/groups/{cn}/groups"
-  filter: "(&(objectClass=group)(displayName=部署G_*)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))"
-  search_params: []
-  # All data
-  attributes: []
+
+# Get a specific organization unit by CN
+- path: "/api/v1/org-units/{cn}"
+  filter: "(&(objectClass=group)(cn={cn}))"
+
+# List sub-organizational units for a given CN
+- path: "/api/v1/org-units/{cn}/sub-orgs"
+  filter: "(&(objectClass=group)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))"
+
+# List users within a specific organization unit by CN
+- path: "/api/v1/org-units/{cn}/users"
+  filter: "(&(objectClass=user)(cn=00*)(mail=*)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))"
+
+# ----------------------------------------------------------------------
+# Users
+# ----------------------------------------------------------------------
+# Endpoints to query LDAP users (objectClass=user).
+
+# Get all users matching certain criteria
 - path: "/api/v1/users"
   filter: "(&(objectClass=user)(cn=00*)(mail=*))"
   search_params:
-    [
-      "cn",
-      "mail",
-      "displayName",
-      "displayNamePrintable",
-      "memberOf",
-      "department",
-    ]
-  attributes:
-    [
-      "cn",
-      "mail",
-      "sAMAccountName",
-      "displayNamePrintable",
-      "displayName",
-      "msDS-PhoneticDisplayName",
-      "msDS-PhoneticFirstName",
-      "msDS-PhoneticLastName",
-      "extensionAttribute1",
-      "extensionAttribute2",
-      "extensionAttribute3",
-      "extensionAttribute4",
-      "extensionAttribute5",
-      "department",
-      "physicalDeliveryOfficeName",
-      "title",
-      "manager",
-    ]
+    - "cn"
+    - "mail"
+    - "displayName"
+    - "displayNamePrintable"
+    - "memberOf"
+    - "department"
+# Get all users matching certain criteria
+- path: "/api/v1/users/{cn}"
+  filter: "(&(objectClass=user)(cn=00*)(mail=*)(cn={cn}))"
+
+# ----------------------------------------------------------------------
+# Departments
+# ----------------------------------------------------------------------
+# Endpoints to query LDAP groups that represent departments.
+
+# List all departments
+- path: "/api/v1/departments"
+  filter: "(&(objectClass=group)(cn=deptG*)(displayName=*))"
+  search_params: ["cn", "displayName", "memberOf", "department"]
+
+# Get a specific department by CN
+- path: "/api/v1/departments/{cn}"
+  filter: "(&(objectClass=group)(cn=deptG*)(displayName=*)(cn={cn}))"
+
+# Get users in a specific department by CN
+- path: "/api/v1/departments/{cn}/users"
+  filter: "(&(objectClass=user)(cn=00*)(mail=*)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))"
+
+# ----------------------------------------------------------------------
+# Workplaces
+# ----------------------------------------------------------------------
+# Endpoints to query LDAP groups that represent workplaces.
+
+# List all workplaces
+- path: "/api/v1/workplaces"
+  filter: "(&(objectClass=group)(cn=officeG*)(displayName=*))"
+  search_params: ["cn", "displayName", "memberOf", "department"]
+
+# Get a specific department by CN
+- path: "/api/v1/workplaces/{cn}"
+  filter: "(&(objectClass=group)(cn=officeG*)(displayName=*)(cn={cn}))"
+
+# Get users in a specific department by CN
+- path: "/api/v1/workplaces/{cn}/users"
+  filter: "(&(objectClass=user)(cn=00*)(mail=*)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))"
+
+# ----------------------------------------------------------------------
+# positions
+# ----------------------------------------------------------------------
+# Endpoints to query LDAP groups that represent positions.
+
+# List all positions
+- path: "/api/v1/positions"
+  filter: "(&(objectClass=group)(cn=postG*)(displayName=*))"
+  search_params: ["cn", "displayName", "memberOf", "department"]
+
+# Get a specific department by CN
+- path: "/api/v1/positions/{cn}"
+  filter: "(&(objectClass=group)(cn=postG*)(displayName=*)(cn={cn}))"
+
+# Get users in a specific department by CN
+- path: "/api/v1/positions/{cn}/users"
+  filter: "(&(objectClass=user)(cn=00*)(mail=*)(memberOf=CN={cn},OU=Groups,OU=JTEKT,DC=jtekt,DC=local))"
