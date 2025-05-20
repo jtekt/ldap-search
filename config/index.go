@@ -11,10 +11,10 @@ import (
 
 // EndpointConfig defines an API endpoint and its LDAP query parameters
 type EndpointConfig struct {
-	Path         string   `yaml:"path" json:"path"`                   // e.g., "/api/v1/groups"
-	Filter       string   `yaml:"filter" json:"filter"`               // Base LDAP filter
-	SearchParams []string `yaml:"search_params" json:"search_params"` // Allowed search attributes
-	Attributes   []string `yaml:"attributes" json:"attributes"`       // Attributes to return
+	Path         string    `yaml:"path" json:"path"`                   // e.g., "/api/v1/groups"
+	Filter       string    `yaml:"filter" json:"filter"`               // Base LDAP filter
+	SearchParams *[]string `yaml:"search_params" json:"search_params"` // Allowed search attributes
+	Attributes   *[]string `yaml:"attributes" json:"attributes"`       // Attributes to return
 }
 
 // Config holds the application configuration
@@ -30,6 +30,9 @@ type Config struct {
 	LDAPSearchOU string `json:"ldap_search_ou"`
 	LDAPUsername string `json:"-"` // Don't expose username in JSON responses
 	LDAPPassword string `json:"-"` // Don't expose passwords in JSON responses
+
+	// Redis Configuration
+	RedisAddr string `json:"-"` // Don't expose passwords in JSON responses
 
 	// Endpoint configurations
 	Endpoints []EndpointConfig `json:"endpoints"`
@@ -63,6 +66,9 @@ func GetConfig() Config {
 		LDAPSearchOU: getEnv("LDAP_SEARCH_OU", ""),
 		LDAPUsername: getEnv("LDAP_USERNAME", ""),
 		LDAPPassword: getEnv("LDAP_PASSWORD", ""),
+
+		// Redis
+		RedisAddr: getEnv("REDIS_ADDR", "localhost:6379"),
 
 		// Endpoints
 		Endpoints: loadEndpointsConfig(),

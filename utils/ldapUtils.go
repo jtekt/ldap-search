@@ -18,10 +18,12 @@ func Connect(cfg config.Config) (*ldap.Conn, error) {
 }
 
 // Search performs an LDAP search with pagination
-func Search(cfg config.Config, filter string, attributes []string) ([]*ldap.Entry, error) {
-	// TODO: Add caching logic here, maybe 20 minutes
-	// Depending on the query it can take a while to get results
-	// For example, if the query is too broad, it can take a long time to get results
+func Search(cfg config.Config, filter string, attributes *[]string) ([]*ldap.Entry, error) {
+	// If attributes is nil, replace it with an empty slice
+	if attributes == nil {
+		empty := []string{}
+		attributes = &empty
+	}
 
 	connection, err := Connect(cfg)
 	if err != nil {
@@ -44,11 +46,11 @@ func Search(cfg config.Config, filter string, attributes []string) ([]*ldap.Entr
 		0,
 		false,
 		filter,
-		attributes,
+		*attributes,
 		nil,
 	)
 
-	result, err := connection.SearchWithPaging(searchReq, 1000)
+	result, err := connection.SearchWithPaging(searchReq, 10)
 	if err != nil {
 		return nil, fmt.Errorf("search error: %v", err)
 	}

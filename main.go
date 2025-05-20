@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"ldap-search/cache"
 	"ldap-search/config"
 	"ldap-search/docs"
 	"ldap-search/handlers"
@@ -20,6 +21,9 @@ func main() {
 	// Load configuration
 	cfg := config.LoadConfig()
 
+	// Initialize cache
+	redisCache := cache.New(cfg.RedisAddr)
+
 	// Create the base mux
 	mux := http.NewServeMux()
 
@@ -28,7 +32,7 @@ func main() {
 	mux.Handle("GET /health", middleware.ChainMiddleware(handlers.HealthHandler, middleware.Logging, middleware.Cors))
 
 	// Register LDAP endpoints from config
-	handlers.RegisterLdapEndpoints(mux, cfg)
+	handlers.RegisterLdapEndpoints(mux, cfg, redisCache)
 
 	// Docs
 	docs.SetupSwagger(mux, cfg)
