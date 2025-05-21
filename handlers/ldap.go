@@ -157,7 +157,7 @@ func (h *LdapHandler) handleLdapSearch(ep config.EndpointConfig, redisCache *cac
 		}
 
 		// Format entries or return null if empty
-		data := formatEntries(entries, []string{"memberOf", "owner", "manager"})
+		data := formatEntries(entries)
 		if len(data) == 0 {
 			data = nil
 		}
@@ -166,12 +166,11 @@ func (h *LdapHandler) handleLdapSearch(ep config.EndpointConfig, redisCache *cac
 }
 
 // formatEntries converts LDAP entries to a configurable JSON format
-func formatEntries(entries []*ldap.Entry, specialAttrs []string) []map[string]interface{} {
+func formatEntries(entries []*ldap.Entry) []map[string]interface{} {
 	var result []map[string]interface{}
-	specialAttrSet := make(map[string]bool)
-	for _, attr := range specialAttrs {
-		specialAttrSet[strings.ToLower(attr)] = true
-	}
+
+	// Get parsed properties from the config
+	cfg := config.GetConfig()
 
 	for _, entry := range entries {
 		entryMap := make(map[string]interface{})
@@ -179,7 +178,7 @@ func formatEntries(entries []*ldap.Entry, specialAttrs []string) []map[string]in
 		for _, attr := range entry.Attributes {
 			attrNameLower := strings.ToLower(attr.Name)
 
-			if specialAttrSet[attrNameLower] {
+			if cfg.ParsedProperties[attrNameLower] {
 				// Parse each DN string into a map
 				var parsedDNs []map[string]interface{}
 				for _, dn := range attr.Values {

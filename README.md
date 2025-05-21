@@ -120,6 +120,7 @@ Example `.env` file:
 
 ```env
 JWKS_URI=https://your-oidc-provider/.well-known/jwks.json
+
 LDAP_HOSTNAME=ldap.example.com
 LDAP_SEARCH_OU=ou=users,dc=example,dc=com
 LDAP_PORT=389
@@ -127,6 +128,10 @@ LDAP_USERNAME=admin
 LDAP_PASSWORD=secret
 
 PORT=8080
+
+REDIS_ADDR=localhost:30379
+
+PARSED_PROPERTIES="memberOf,owner,manager"
 ```
 
 ## Configuration

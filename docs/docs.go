@@ -253,7 +253,7 @@ func generateSwaggerSpec(cfg config.Config) ([]byte, error) {
 				Schema: &spec.Schema{
 					SchemaProps: spec.SchemaProps{
 						Type:       []string{"object"},
-						Properties: buildAttributesSchema(*ep.Attributes),
+						Properties: buildAttributesSchema(*ep.Attributes, cfg.ParsedProperties),
 					},
 				},
 			}
@@ -332,14 +332,30 @@ func generateSwaggerSpec(cfg config.Config) ([]byte, error) {
 }
 
 // buildAttributesSchema creates a schema for the attributes
-func buildAttributesSchema(attributes []string) map[string]spec.Schema {
+func buildAttributesSchema(attributes []string, parsedProperties map[string]bool) map[string]spec.Schema {
 	props := make(map[string]spec.Schema)
 	for _, attr := range attributes {
-		props[attr] = spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type:     []string{"string"},
-				Nullable: true,
-			},
+		if _, ok := parsedProperties[attr]; ok {
+			// Set the type to "array" of objects for parsed properties
+			props[attr] = spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Type: []string{"array"},
+					Items: &spec.SchemaOrArray{
+						Schema: &spec.Schema{
+							SchemaProps: spec.SchemaProps{
+								Type: []string{"object"},
+							},
+						},
+					},
+				},
+			}
+		} else {
+			props[attr] = spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Type:     []string{"string"},
+					Nullable: true,
+				},
+			}
 		}
 	}
 	return props

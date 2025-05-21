@@ -36,6 +36,9 @@ type Config struct {
 
 	// Endpoint configurations
 	Endpoints []EndpointConfig `json:"endpoints"`
+
+	// Parsed properties
+	ParsedProperties map[string]bool `json:"parsed_properties"` // Parsed properties from the endpoints
 }
 
 // LoadConfig loads the configuration from environment variables and YAML files
@@ -53,6 +56,15 @@ func LoadConfig() Config {
 // GetConfig retrieves the configuration from environment variables and YAML
 // It uses default values if the environment variables are not set
 func GetConfig() Config {
+	parsedProperties := strings.Split(getEnv("PARSED_PROPERTIES", "memberOf,owner,manager"), ",")
+
+	// Create the map with the properties separated by ","
+	parsedPropertiesMap := make(map[string]bool)
+	for _, prop := range parsedProperties {
+		prop = strings.TrimSpace(prop)
+		parsedPropertiesMap[prop] = true
+	}
+
 	return Config{
 		// Server
 		Port: getEnv("PORT", "8080"),
@@ -72,6 +84,9 @@ func GetConfig() Config {
 
 		// Endpoints
 		Endpoints: loadEndpointsConfig(),
+
+		// Parsed properties
+		ParsedProperties: parsedPropertiesMap,
 	}
 }
 
