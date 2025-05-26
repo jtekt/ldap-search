@@ -33,7 +33,7 @@ func RegisterLdapEndpoints(mux *http.ServeMux, cfg config.Config, redisCache *ca
 	handler := NewLdapHandler(cfg)
 
 	for _, ep := range cfg.Endpoints {
-		mux.Handle("GET "+ep.Path, middleware.ChainMiddleware(handler.handleLdapSearch(ep, redisCache), middleware.Logging, middleware.Cors))
+		mux.Handle("GET "+ep.Path, middleware.ChainMiddleware(handler.handleLdapSearch(ep, redisCache), middleware.Logging, middleware.Cors, middleware.Auth))
 		log.Printf("Registered endpoint: %s with filter: %s", ep.Path, ep.Filter)
 	}
 }
