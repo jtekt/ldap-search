@@ -80,7 +80,7 @@ func GetConfig() Config {
 		LDAPPassword: getEnv("LDAP_PASSWORD", ""),
 
 		// Redis
-		RedisAddr: getEnv("REDIS_ADDR", "localhost:6379"),
+		RedisAddr: getEnv("REDIS_ADDR", ""),
 
 		// Endpoints
 		Endpoints: loadEndpointsConfig(),

@@ -25,13 +25,14 @@ func New(redisAddr string) *Cache {
 	defer cancel()
 
 	if err := redisClient.Ping(ctx).Err(); err != nil {
-		log.Fatalf("[ERROR] Failed to connect to Redis at %s: %v", redisAddr, err)
+		log.Printf("[ERROR] Failed to connect to Redis at %s: %v", redisAddr, err)
+		log.Println("[INFO] Running without cache.")
+		return nil // Return nil if the connection fails
 	}
 
 	return gocache.New(&gocache.Options{
-		Redis: redisClient,
-		// TODO: Verify if this is needed
-		// LocalCache: gocache.NewTinyLFU(1000, time.Minute), // In-memory LRU layer - Can be used for local caching
+		Redis:      redisClient,
+		LocalCache: gocache.NewTinyLFU(60*5, time.Minute), // In-memory LRU layer - Can be used for local caching
 	})
 }
 
