@@ -138,7 +138,7 @@ func (h *LdapHandler) handleLdapSearch(ep config.EndpointConfig, redisCache *cac
 
 		if err != nil {
 			// Cache miss or error — perform LDAP search
-			entries, err = ldapUtils.Search(h.config, filter, attributes)
+			entries, err := ldapUtils.Search(h.config, filter, attributes)
 			if err != nil {
 				formatResponse(w, http.StatusInternalServerError, nil, fmt.Errorf("LDAP search failed: %v", err), "LDAP_SEARCH_ERROR")
 				return

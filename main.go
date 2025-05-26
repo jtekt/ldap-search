@@ -11,12 +11,6 @@ import (
 	"ldap-search/middleware"
 )
 
-// @title LDAP Search API
-// @version 1.0.0
-// @description This API provides endpoints to search an LDAP directory based on configurable filters and attributes. It supports dynamic endpoints defined in the configuration, allowing searches by path parameters (e.g., /api/{id}) and query parameters (e.g., ?search=value). All endpoints except / and /health require Bearer token authentication via the Authorization header.
-// @contact.name Support Team
-// @contact.email kevin_fabel@jtekt.co.jp
-// @BasePath /
 func main() {
 	// Load configuration
 	cfg := config.LoadConfig()
