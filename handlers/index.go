@@ -10,13 +10,20 @@ import (
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	cfg := config.GetConfig()
 
-	// Create a sanitized response struct
-	response := cfg
-
 	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	// Encode response as JSON
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(cfg)
+}
+
+// HealthHandler provides a health check endpoint for monitoring
+func HealthHandler(w http.ResponseWriter, r *http.Request) {
+	// Set response headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// Encode response as JSON
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }

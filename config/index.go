@@ -6,7 +6,16 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v3"
 )
+
+// EndpointConfig defines an API endpoint and its LDAP query parameters
+type EndpointConfig struct {
+	Path         string    `yaml:"path" json:"path"`                   // e.g., "/api/v1/groups"
+	Filter       string    `yaml:"filter" json:"filter"`               // Base LDAP filter
+	SearchParams *[]string `yaml:"search_params" json:"search_params"` // Allowed search attributes
+	Attributes   *[]string `yaml:"attributes" json:"attributes"`       // Attributes to return
+}
 
 // Config holds the application configuration
 type Config struct {
@@ -17,18 +26,47 @@ type Config struct {
 
 	// LDAP Configuration
 	LDAPHostname string `json:"ldap_hostname"`
+	LDAPPort     string `json:"ldap_port"`
 	LDAPSearchOU string `json:"ldap_search_ou"`
 	LDAPUsername string `json:"-"` // Don't expose username in JSON responses
 	LDAPPassword string `json:"-"` // Don't expose passwords in JSON responses
 
-	// Fields to ignore in LDAP search results
-	IgnoredFields []string `json:"ignored_fields"`
+	// Redis Configuration
+	RedisAddr string `json:"-"` // Don't expose passwords in JSON responses
+
+	// Endpoint configurations
+	Endpoints []EndpointConfig `json:"endpoints"`
+
+	// Parsed properties
+	ParsedProperties map[string]bool `json:"parsed_properties"` // Parsed properties from the endpoints
 }
 
-// GetConfig loads configuration from environment variables
+// LoadConfig loads the configuration from environment variables and YAML files
+func LoadConfig() Config {
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Printf("[WARN] No .env file found or failed to load: %v (continuing...)", err)
+	}
+
+	// Load base configuration from environment variables
+	return GetConfig()
+}
+
+// GetConfig retrieves the configuration from environment variables and YAML
+// It uses default values if the environment variables are not set
 func GetConfig() Config {
+	parsedProperties := strings.Split(getEnv("PARSED_PROPERTIES", "memberOf,owner,manager"), ",")
+
+	// Create the map with the properties separated by ","
+	parsedPropertiesMap := make(map[string]bool)
+	for _, prop := range parsedProperties {
+		prop = strings.TrimSpace(prop)
+		parsedPropertiesMap[prop] = true
+	}
+
 	return Config{
-		// OIDC
+		// Server
 		Port: getEnv("PORT", "8080"),
 
 		// OIDC
@@ -36,24 +74,53 @@ func GetConfig() Config {
 
 		// LDAP
 		LDAPHostname: getEnv("LDAP_HOSTNAME", ""),
+		LDAPPort:     getEnv("LDAP_PORT", "389"),
 		LDAPSearchOU: getEnv("LDAP_SEARCH_OU", ""),
 		LDAPUsername: getEnv("LDAP_USERNAME", ""),
 		LDAPPassword: getEnv("LDAP_PASSWORD", ""),
 
-		// Ignored fields (converted from CSV string to slice)
-		IgnoredFields: parseCommaSeparatedEnv("IGNORED_FIELDS"),
+		// Redis
+		RedisAddr: getEnv("REDIS_ADDR", ""),
+
+		// Endpoints
+		Endpoints: loadEndpointsConfig(),
+
+		// Parsed properties
+		ParsedProperties: parsedPropertiesMap,
 	}
 }
 
-// LoadConfig initiate the dotenv and loads configuration from environment variables
-func LoadConfig() Config {
-	// Load env
-	err := godotenv.Load()
+// Loads endpoint configurations from a YAML file
+func loadEndpointsConfig() []EndpointConfig {
+	var endpoints []EndpointConfig
+
+	// Read endpoints.yaml
+	data, err := os.ReadFile("config/endpoints.yaml")
 	if err != nil {
-		log.Printf("[WARN] No .env file found or failed to load: %v (continuing...)", err)
+		log.Printf("[WARN] Failed to read endpoints.yaml: %v (continuing with no endpoints)", err)
+		return endpoints
 	}
 
-	return GetConfig()
+	// Unmarshal YAML
+	if err := yaml.Unmarshal(data, &endpoints); err != nil {
+		log.Fatalf("failed to unmarshal endpoints config: %v", err)
+	}
+
+	// Validate endpoints
+	for _, ep := range endpoints {
+		if ep.Path == "" || ep.Filter == "" {
+			log.Fatalf("endpoint path and filter are required: %+v", ep)
+		}
+		// Validate placeholder count
+		pathPlaceholders := strings.Count(ep.Path, "{}")
+		filterPlaceholders := strings.Count(ep.Filter, "{}") + strings.Count(ep.Filter, "{LDAPSearchOU}")
+		if pathPlaceholders != filterPlaceholders {
+			log.Fatalf("mismatch in placeholders: path (%s) has %d '{}', filter (%s) has %d '{}'",
+				ep.Path, pathPlaceholders, ep.Filter, filterPlaceholders)
+		}
+	}
+
+	return endpoints
 }
 
 // getEnv fetches environment variables with a default value
@@ -62,13 +129,4 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
-}
-
-// parseCommaSeparatedEnv converts a comma-separated environment variable to a string slice
-func parseCommaSeparatedEnv(key string) []string {
-	value := getEnv(key, "")
-	if value == "" {
-		return []string{}
-	}
-	return strings.Split(value, ",")
 }
