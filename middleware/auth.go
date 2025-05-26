@@ -3,9 +3,9 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"ldap-search/config"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -69,15 +69,15 @@ func getKeyset(certsUrl string) (jwk.Set, error) {
 func Auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get JWKS URL from environment variable
-		certsUrl, hasEnv := os.LookupEnv("JWKS_URI")
-		if !hasEnv {
+		config := config.GetConfig()
+		if len(config.JWKSURI) == 0 {
 			log.Printf("[ERROR] JWKS_URI not set")
 			http.Error(w, fmt.Sprintf(`{"message": "%s", "code": "%v"}`, "JWKS_URI not set", "ENV_MISSING"), http.StatusInternalServerError)
 			return
 		}
 
 		// Get the cached keyset
-		keyset, err := getKeyset(certsUrl)
+		keyset, err := getKeyset(config.JWKSURI)
 		if err != nil {
 			log.Printf("[ERROR] Failed to get cached JWKS: %v", err)
 			http.Error(w, fmt.Sprintf(`{"message": "%s", "code": "%v"}`, err.Error(), "JWKS_CACHE_FAILED"), http.StatusInternalServerError)
