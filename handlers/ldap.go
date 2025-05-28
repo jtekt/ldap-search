@@ -71,15 +71,15 @@ func formatResponse(w http.ResponseWriter, status int, data interface{}, err err
 }
 
 // handleLdapSearch handles LDAP searches with search parameters and pagination
-func (h *LdapHandler) handleLdapSearch(ep config.EndpointConfig, redisCache *cache.Cache) http.HandlerFunc {
+func (h *LdapHandler) handleLdapSearch(endpoint config.EndpointConfig, redisCache *cache.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract attributes and base filter
-		attributes := ep.Attributes
-		searchParams := ep.SearchParams
-		filter := ep.Filter
+		attributes := endpoint.Attributes
+		searchParams := endpoint.SearchParams
+		filter := endpoint.Filter
 
 		query := r.URL.Query()
-		pathParams := extractPathParams(ep.Path, r.URL.Path)
+		pathParams := extractPathParams(endpoint.Path, r.URL.Path)
 
 		// Create a map of valid search parameters
 		validMap := make(map[string]bool)
@@ -104,7 +104,7 @@ func (h *LdapHandler) handleLdapSearch(ep config.EndpointConfig, redisCache *cac
 		}
 
 		// First: Replace path parameters like {cn} in the filter
-		for _, param := range getPathParams(ep.Path) {
+		for _, param := range getPathParams(endpoint.Path) {
 			if value, ok := pathParams[param]; ok {
 				filter = strings.ReplaceAll(filter, "{"+param+"}", sanitize(value))
 			}
@@ -131,36 +131,44 @@ func (h *LdapHandler) handleLdapSearch(ep config.EndpointConfig, redisCache *cac
 			}
 		}
 
-		// Try to get the result from cache
 		var entries []*ldap.Entry
-		cacheKey := cache.HashKey(filter) // Use a hash of the filter as the cache key
-		err := redisCache.Get(r.Context(), cacheKey, &entries)
+		var err error
 
-		if err != nil {
-			// Cache miss or error — perform LDAP search
-			entries, err := ldapUtils.Search(h.config, filter, attributes)
+		// Only use caching if RedisAddr is configured
+		if h.config.RedisAddr != "" && redisCache != nil {
+			// Try to get from cache
+			cacheKey := cache.HashKey(filter)
+			err = redisCache.Get(r.Context(), cacheKey, &entries)
+			if err != nil {
+				// Cache miss or error — perform LDAP search
+				entries, err = ldapUtils.Search(h.config, filter, attributes)
+				if err != nil {
+					formatResponse(w, http.StatusInternalServerError, nil, fmt.Errorf("LDAP search failed: %v", err), "LDAP_SEARCH_ERROR")
+					return
+				}
+				// Cache the result
+				cacheErr := redisCache.Set(&gocache.Item{
+					Ctx:   r.Context(),
+					Key:   cacheKey,
+					Value: entries,
+					TTL:   24 * time.Hour, // Cache for 24 hours
+				})
+				if cacheErr != nil {
+					log.Printf("[WARN] Failed to cache LDAP result: %v", cacheErr)
+				}
+			}
+		} else {
+			// No caching - direct LDAP search
+			entries, err = ldapUtils.Search(h.config, filter, attributes)
 			if err != nil {
 				formatResponse(w, http.StatusInternalServerError, nil, fmt.Errorf("LDAP search failed: %v", err), "LDAP_SEARCH_ERROR")
 				return
 			}
-
-			// Cache the result
-			cacheErr := redisCache.Set(&gocache.Item{
-				Ctx:   r.Context(),
-				Key:   cacheKey,
-				Value: entries,
-				TTL:   24 * time.Hour, // Cache for 24 hours
-			})
-			if cacheErr != nil {
-				log.Printf("[WARN] Failed to cache LDAP result: %v", cacheErr)
-			}
 		}
 
-		// Format entries or return null if empty
+		// Format entries
 		data := formatEntries(entries)
-		if len(data) == 0 {
-			data = nil
-		}
+
 		formatResponse(w, http.StatusOK, data, nil, "")
 	}
 }

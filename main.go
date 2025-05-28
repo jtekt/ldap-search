@@ -15,8 +15,12 @@ func main() {
 	// Load configuration
 	cfg := config.LoadConfig()
 
-	// Initialize cache
-	redisCache := cache.New(cfg.RedisAddr)
+	var redisCache *cache.Cache
+
+	// Initialize cache if has the redis address
+	if len(cfg.RedisAddr) > 0 {
+		redisCache = cache.New(cfg.RedisAddr)
+	}
 
 	// Create the base mux
 	mux := http.NewServeMux()

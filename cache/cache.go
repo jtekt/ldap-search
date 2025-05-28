@@ -16,6 +16,11 @@ type Cache = gocache.Cache
 
 // New creates and returns a Redis-backed cache instance
 func New(redisAddr string) *Cache {
+	if len(redisAddr) == 0 {
+		log.Panic("[ERROR] No Redis Address")
+		return nil
+	}
+
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
 		DB:   0, // use default DB
