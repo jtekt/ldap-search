@@ -115,7 +115,7 @@ func (h *LdapHandler) handleLdapSearch(endpoint config.EndpointConfig, redisCach
 		if searchParams != nil {
 			for _, param := range *searchParams {
 				if value := query.Get(param); value != "" {
-					searchFilters = append(searchFilters, fmt.Sprintf("(%s=%s)", param, sanitize(value)))
+					searchFilters = append(searchFilters, fmt.Sprintf("(%s=%s*)", param, sanitize(value)))
 				}
 			}
 		}
