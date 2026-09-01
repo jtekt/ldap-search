@@ -31,7 +31,23 @@ metadata:
 spec:
   ports:
     - port: 8080
-      nodePort: ${K8S_SERVICE_PORT}
   selector:
     app: ${APPLICATION_NAME}
-  type: NodePort
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${APPLICATION_NAME}
+spec:
+  rules:
+    - host: ${APPLICATION_NAME}.jtektrnd.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ${APPLICATION_NAME}
+                port:
+                  number: 8080
