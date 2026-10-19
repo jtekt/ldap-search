@@ -51,3 +51,22 @@ spec:
                 name: ${APPLICATION_NAME}
                 port:
                   number: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ${APPLICATION_NAME}
+spec:
+  hostnames:
+   - ${APPLICATION_NAME}.jtektrnd.net
+  parentRefs:
+    - name: eg
+      namespace: envoy-gateway-system
+  rules:
+    - backendRefs:
+        - name: ${APPLICATION_NAME}
+          port: 8080
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
