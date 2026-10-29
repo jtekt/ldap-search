@@ -70,7 +70,7 @@ func GetConfig() Config {
 		Port: getEnv("PORT", "8080"),
 
 		// OIDC
-		JWKSURI: getEnv("JWKS_URI", "http://10.115.1.100:30416/realms/jtekt/protocol/openid-connect/certs"),
+		JWKSURI: getEnv("JWKS_URI", ""),
 
 		// LDAP
 		LDAPHostname: getEnv("LDAP_HOSTNAME", ""),

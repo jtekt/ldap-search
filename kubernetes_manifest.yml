@@ -18,6 +18,8 @@ spec:
           env:
             - name: IGNORED_FIELDS
               value: userCertificate
+            - name: JWKS_URI
+              value: http://keycloak.keycloak:8080/realms/jtekt/protocol/openid-connect/certs
           envFrom:
             - secretRef:
                 name: environment-variables
