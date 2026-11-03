@@ -4,7 +4,7 @@ This is a Go-based API for searching an LDAP directory using dynamically configu
 
 ## Features
 
-- **Dynamic Endpoints**: Configurable LDAP search endpoints (e.g., `/api/users`, `/api/{id}`) defined in a YAML configuration.
+- **Dynamic Endpoints**: Configurable LDAP search endpoints (e.g., `/api/vi/users`, `/api/v1/{id}`) defined in a YAML configuration.
 - **OIDC Authentication**: Requires Bearer token authentication for dynamic endpoints, validated using an OIDC provider’s JWKS URI.
 - **Swagger UI**: Interactive API documentation at `/swagger/` (publicly accessible).
 
@@ -69,7 +69,7 @@ The Swagger UI provides detailed documentation for all endpoints, including sche
 
 ### Dynamic LDAP Search Endpoints
 
-- **URL**: Configured in `config.yaml` (e.g., `GET /api/v1/groups`, `GET /api/v1/groups/{id}`)
+- **URL**: Configured in `config/endpoints.yaml` (e.g., `GET /api/v1/groups`, `GET /api/v1/groups/{cn}`)
 - **Authentication**: Required (`Authorization: Bearer <OIDC Access Token>`)
 - **Description**: Searches the LDAP directory using path parameters (e.g., `{id}`) and query parameters (e.g., `?email=value`). The response includes LDAP entries with specified attributes, excluding ignored fields.
 - **Example Request**:
@@ -136,7 +136,7 @@ PARSED_PROPERTIES="memberOf,owner,manager"
 
 ## Configuration
 
-Dynamic endpoints are defined in a `config.yaml` file (or equivalent). Example:
+Dynamic endpoints are defined in `config/endpoints.yaml`. Example:
 
 ```yaml
 - path: "/api/v1/groups"
